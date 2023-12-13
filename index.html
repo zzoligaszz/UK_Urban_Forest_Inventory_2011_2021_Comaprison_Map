@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>UK Urban Forest Inventory 2011-2021 Comparison Map</title>
+    <script src="https://api.mapbox.com/mapbox-gl-js/v2.9.1/mapbox-gl.js"></script>
+    <link href="https://api.mapbox.com/mapbox-gl-js/v2.9.1/mapbox-gl.css" rel="stylesheet" />
+    <script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-controls/v1.5.0/mapbox-gl-controls.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css" rel="stylesheet" />
+    <link href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-controls/v1.5.0/mapbox-gl-controls.css"
+        rel="stylesheet" />
+    <style>
+
+        /*Set Map Position*/
+        #map {
+            height: 100vh;
+            width: 100%;
+            position: relative; 
+        }
+
+        /*Set Legend Position & Styling*/
+        #legend {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background-color: #deeaee;
+            border-radius: 5px;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.10);
+            font-family: Arial, sans-serif;
+            padding: 10px;
+            z-index: 2;
+        }
+
+        /*Create Legend Key*/
+        .legend-key {
+            display: inline-block;
+            height: 15px;
+            width: 15px;
+            border-radius: 50%;
+            margin-right: 5px;
+        }
+
+        /*Set Legend Layer Name Position*/
+        .legend div {
+            display: absolute;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+
+        /*Set Legend Font*/
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+
+            #map,
+            #map * {
+                visibility: visible;
+            }
+
+            #map {
+                position: absolute;
+                left: 0;
+                top: 0;
+            }
+        }
+
+        /*Set Layer Toggle Background*/
+        #layer-controls {
+            position: absolute;
+            top: 100px;
+            left: 20px;
+            z-index: 2;
+            background-color: #deeaee;
+            padding: 10px;
+            border-radius: 3px;
+            box-shadow: 0 1px 5px rgba(0, 0, 0, 0.3);
+        }
+
+        /*Set Layer Toggle Position*/
+        #layer-controls div {
+            margin-bottom: 5px;
+        }
+
+        #layer-controls label {
+            margin-left: 8px;
+            font-size: 14px;
+            vertical-align: middle;
+        }
+
+        /*Set Print Button Position*/
+        #print-btn {
+            position: absolute;
+            top: 15px;
+            left: 20px;
+            font-size: 20px;
+            z-index: 2;
+        }
+
+        /*Set Search Bar Position*/
+        #search-box {
+            position: absolute;
+            z-index: 2;
+        }
+
+        /*Set Search Bar Position*/
+        #search-box {
+            position: absolute;
+            top: 50px;
+            left: 20px;
+            z-index: 2;
+            font-size: 14px;
+            padding: 8px;
+            width: 300px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-shadow: 0 1px 5px rgba(0, 0, 0, 0.3);
+        }
+
+        /*Set Search Button Position and Styling*/
+        #search-btn {
+            position: absolute;
+            top: 50px;
+            left: 270px;
+            z-index: 2;
+            padding: 10px 15px;
+            font-size: 14px;
+            color: white;
+            background-color: #007bff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            box-shadow: 0 1px 5px rgba(0, 0, 0, 0.3);
+        }
+
+        /*Set Search Button Styling*/
+        #search-btn:hover {
+            background-color: #0056b3;
+        }
+
+        /*Set Scale Bar Position and Styling*/
+        #scale {
+            position: absolute;
+            bottom: 100px;
+            left: 100px;
+            z-index: 2;
+            background-color: rgba(255, 255, 255, 0.8);
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 12px;
+            padding: 5px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+        }
+
+
+        /*Additional Print Button Settings*/
+    </style>
+</head>
+
+<body>
+    <div id="map"></div> 
+    <div id="legend"></div>
+    <button id="print-btn">Print Map</button>
+    <input type="text" id="search-box" placeholder="Search location"><button id="search-btn">Search</button>
+    <div id="layer-controls"></div>
+    <div></div>
+    
+    <script>
+        mapboxgl.accessToken = 'pk.eyJ1Ijoib2xpZ2FzIiwiYSI6ImNscHR6ZHJlMzBsN20yanFzZXpjYjh0MjMifQ.I9Yzh0UywOIodMi0TB0T7g';
+
+        var map = new mapboxgl.Map({
+            container: 'map', // container ID
+            style: 'mapbox://styles/mapbox/light-v11', // Mapbox Studio Map Style URL
+            center: [-2.178968, 54.188893], // Map Centralised Start Position [lng, lat]
+            zoom: 5 // Map Starting Zoom
+        });
+
+        /*Set Toggle Layer Menu Styling*/
+        function addLayerControls() {
+            var layers = [
+                { 'id': 'oligas.2x9tg3ok', 'name': 'Scotland Urban Forest Inventory 2021' },
+                { 'id': 'oligas.3fgburge', 'name': 'Scotland Urban Forest Inventory 2020' },
+                { 'id': 'oligas.0hjhuj3w', 'name': 'Scotland Urban Forest Inventory 2019' },
+                { 'id': 'oligas.9v5feoeu', 'name': 'Scotland Urban Forest Inventory 2018' },
+                { 'id': 'oligas.7jkgtsq3', 'name': 'Scotland Urban Forest Inventory 2017' },
+                { 'id': 'oligas.a1v42d4n', 'name': 'Scotland Urban Forest Inventory 2016' },
+                { 'id': 'oligas.2oxg0pub', 'name': 'Scotland Urban Forest Inventory 2015' },
+                { 'id': 'oligas.bmx8r4k1', 'name': 'Scotland Urban Forest Inventory 2014' },
+                { 'id': 'oligas.7fp42alf', 'name': 'Scotland Urban Forest Inventory 2013' },
+                { 'id': 'oligas.a76j2qut', 'name': 'Scotland Urban Forest Inventory 2012' },
+                { 'id': 'oligas.056fbfsf', 'name': 'Scotland Urban Forest Inventory 2011' },
+                { 'id': 'oligas.2lc5vryh', 'name': 'England & Wales Urban Forest Inventory 2021' },
+                { 'id': 'oligas.2ja73j88', 'name': 'England & Wales Urban Forest Inventory 2020' },
+                { 'id': 'oligas.4def7rmi', 'name': 'England & Wales Urban Forest Inventory 2019' },
+                { 'id': 'oligas.7thx1sz8', 'name': 'England & Wales Urban Forest Inventory 2018' },
+                { 'id': 'oligas.663gv1ae', 'name': 'England & Wales Urban Forest Inventory 2017' },
+                { 'id': 'oligas.9q94zwia', 'name': 'England & Wales Urban Forest Inventory 2016' },
+                { 'id': 'oligas.054gpig9', 'name': 'England & Wales Urban Forest Inventory 2015' },
+                { 'id': 'oligas.3ropmdy4', 'name': 'England & Wales Urban Forest Inventory 2014' },
+                { 'id': 'oligas.7j3g8ovg', 'name': 'England & Wales Urban Forest Inventory 2013' },
+                { 'id': 'oligas.4k6kxil1', 'name': 'England & Wales Urban Forest Inventory 2012' },
+                { 'id': 'oligas.as7jtr1j', 'name': 'England & Wales Urban Forest Inventory 2011' },
+                { 'id': 'oligas.d7cgzjic', 'name': 'Scotland Major Cities & Towns' },
+                { 'id': 'oligas.31g6bs8m', 'name': 'England & Wales Major Cities' },
+            ];
+
+            var layerControls = document.getElementById('layer-controls');
+
+            layers.forEach(function (layer) {
+                /*Create Option to add Additional Layers*/
+                var container = document.createElement('div');
+
+                /*Set Layer Toggle Checkboxes*/
+                var checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.id = layer.id;
+                checkbox.checked = true;
+
+                /*Create Layer Toggle Label*/
+                var label = document.createElement('label');
+                label.htmlFor = layer.id;
+                label.textContent = layer.name;
+
+                 /*Set Checkbox Layer Outcome*/
+                 checkbox.onchange = function () {
+                    map.setLayoutProperty(layer.id, 'visibility', this.checked ? 'visible' : 'none');
+                };
+
+                container.appendChild(checkbox);
+                container.appendChild(label);
+                layerControls.appendChild(container);
+            });
+        }
+  
+        /*Add zoom and rotation controls to the map*/
+        map.addControl(new mapboxgl.NavigationControl());
+
+        /*Add Layers*/
+        map.on(
+        'load', function () {
+         /*Scotland Urban Forest Inventory 2011*/
+            map.addLayer({
+                'id': 'oligas.056fbfsf',
+                'type': 'fill',
+                'source': {
+                    'type': 'vector',
+                    'url': 'mapbox://oligas.056fbfsf'
+                },
+                'paint': { 'fill-color': '#ff0000' },
+                'source-layer': 'National_Forest_Inventory_Sco-3vtumg',
+                
+            });
+            
+        /*Scotland Urban Forest Inventory 2012*/
+            map.addLayer({
+                'id': 'oligas.a76j2qut',
+                'type': 'fill',
+                'source': {
+                    'type': 'vector',
+                    'url': 'mapbox://oligas.a76j2qut'
+                },
+                'paint': { 'fill-color': '#0113bc' },
+                'source-layer': 'National_Forest_Inventory_Sco-2tot7v',
+            });
+
+        /*Scotland Urban Forest Inventory 2013*/
+            map.addLayer({
+                'id': 'oligas.7fp42alf',
+                'type': 'fill',
+                'source': {
+                    'type': 'vector',
+                    'url': 'mapbox://oligas.7fp42alf'
+                },
+                'paint': { 'fill-color': '#e034ef' },
+                'source-layer': 'National_Forest_Inventory_Sco-7gdwkm',
+            });
+
+        /*Scotland Urban Forest Inventory 2014*/
+            map.addLayer({
+                'id': 'oligas.bmx8r4k1',
+                'type': 'fill',
+                'source': {
+                    'type': 'vector',
+                    'url': 'mapbox://oligas.bmx8r4k1'
+                },
+                'paint': { 'fill-color': '#5eb2ef' },
+                'source-layer': 'National_Forest_Inventory_Sco-daw1ey',
+            });
+
+        /*Scotland Urban Forest Inventory 2015*/
+            map.addLayer({
+                'id': 'oligas.2oxg0pub',
+                'type': 'fill',
+                'source': {
+                    'type': 'vector',
+                    'url': 'mapbox://oligas.2oxg0pub'
+                },
+                'paint': { 'fill-color': '#feff00' },
+                'source-layer': 'National_Forest_Inventory_Sco-69fcqv',
+            });
+
+        /*Scotland Urban Forest Inventory 2016*/
+            map.addLayer({
+                'id': 'oligas.a1v42d4n',
+                'type': 'fill',
+                'source': {
+                    'type': 'vector',
+                    'url': 'mapbox://oligas.a1v42d4n'
+                },
+                'paint': { 'fill-color': '#7c5c1a' },
+                'source-layer': 'National_Forest_Inventory_Sco-0m0efi',
+            });
+
+        /*Scotland Urban Forest Inventory 2017*/
+            map.addLayer({
+                'id': 'oligas.7jkgtsq3',
+                'type': 'fill',
+                'source': {
+                    'type': 'vector',
+                    'url': 'mapbox://oligas.7jkgtsq3'
+                },
+                'paint': { 'fill-color': '#72f4ea' },
+                'source-layer': 'National_Forest_Inventory_Sco-4eagl5',
+            });
+
+        /*Scotland Urban Forest Inventory 2018*/
+            map.addLayer({
+                'id': 'oligas.9v5feoeu',
+                'type': 'fill',
+                'source': {
+                    'type': 'vector',
+                    'url': 'mapbox://oligas.9v5feoeu'
+                },
+                'paint': { 'fill-color': '#721f1e' },
+                'source-layer': 'National_Forest_Inventory_Sco-ajkks8',
+            });
+
+        /*Scotland Urban Forest Inventory 2019*/
+            map.addLayer({
+                'id': 'oligas.0hjhuj3w',
+                'type': 'fill',
+                'source': {
+                    'type': 'vector',
+                    'url': 'mapbox://oligas.0hjhuj3w'
+                },
+                'paint': { 'fill-color': '#77b284' },
+                'source-layer': 'National_Forest_Inventory_Sco-5uwqni',
+            });
+
+        /*Scotland Urban Forest Inventory 2020*/
+            map.addLayer({
+                'id': 'oligas.3fgburge',
+                'type': 'fill',
+                'source': {
+                    'type': 'vector',
+                    'url': 'mapbox://oligas.3fgburge'
+                },
+                'paint': { 'fill-color': '#d622da' },
+                'source-layer': 'National_Forest_Inventory_Sco-dohsjm',
+            });
+
+        /*Scotland Urban Forest Inventory 2021*/
+            map.addLayer({
+                'id': 'oligas.2x9tg3ok',
+                'type': 'fill',
+                'source': {
+                    'type': 'vector',
+                    'url': 'mapbox://oligas.2x9tg3ok'
+                },
+                'paint': { 'fill-color': '#00ff00' },
+                'source-layer': 'National_Forest_Inventory_Sco-08mdvy',
+            });
+
+        /*England and Wales Urban Forest Inventory 2011*/
+            map.addLayer({
+                'id': 'oligas.as7jtr1j',
+                'type': 'fill',
+                'source': {
+                    'type': 'vector',
+                    'url': 'mapbox://oligas.as7jtr1j'
+                },
+                'paint': {
+                    'fill-color': '#ff0000', },
+                'source-layer': 'National_Forest_Inventory_Eng-221a45',
+            });
+
+        /*England and Wales Urban Forest Inventory 2012*/
+            map.addLayer({
+                'id': 'oligas.4k6kxil1',
+                'type': 'fill',
+                'source': {
+                    'type': 'vector',
+                    'url': 'mapbox://oligas.4k6kxil1'
+                },
+                'paint': {
+                    'fill-color': '#0113bc', },
+                'source-layer': 'National_Forest_Inventory_Eng-b38lk4',
+            });
+
+        /*England and Wales Urban Forest Inventory 2013*/
+            map.addLayer({
+                'id': 'oligas.7j3g8ovg',
+                'type': 'fill',
+                'source': {
+                    'type': 'vector',
+                    'url': 'mapbox://oligas.7j3g8ovg'
+                },
+                'paint': {
+                    'fill-color': '#e034ef', },
+                'source-layer': 'National_Forest_Inventory_Eng-0tw4cn',
+            });
+
+        /*England and Wales Urban Forest Inventory 2014*/
+            map.addLayer({
+                'id': 'oligas.3ropmdy4',
+                'type': 'fill',
+                'source': {
+                    'type': 'vector',
+                    'url': 'mapbox://oligas.3ropmdy4'
+                },
+                'paint': {
+                    'fill-color': '#5eb2ef', },
+                'source-layer': 'National_Forest_Inventory_Eng-4gdf1t',
+            });
+
+        /*England and Wales Urban Forest Inventory 2015*/
+            map.addLayer({
+                'id': 'oligas.054gpig9',
+                'type': 'fill',
+                'source': {
+                    'type': 'vector',
+                    'url': 'mapbox://oligas.054gpig9'
+                },
+                'paint': {
+                    'fill-color': '#feff00', },
+                'source-layer': 'National_Forest_Inventory_Eng-854r50',
+            });
+
+        /*England and Wales Urban Forest Inventory 2016*/
+            map.addLayer({
+                'id': 'oligas.9q94zwia',
+                'type': 'fill',
+                'source': {
+                    'type': 'vector',
+                    'url': 'mapbox://oligas.9q94zwia'
+                },
+                'paint': {
+                    'fill-color': '#7c5c1a', },
+                'source-layer': 'National_Forest_Inventory_Eng-di1ho1',
+            });
+
+        /*England and Wales Urban Forest Inventory 2017*/
+            map.addLayer({
+                'id': 'oligas.663gv1ae',
+                'type': 'fill',
+                'source': {
+                    'type': 'vector',
+                    'url': 'mapbox://oligas.663gv1ae'
+                },
+                'paint': {
+                    'fill-color': '#72f4ea', },
+                'source-layer': 'National_Forest_Inventory_Eng-9qk6zd',
+            });
+
+        /*England and Wales Urban Forest Inventory 2018*/
+            map.addLayer({
+                'id': 'oligas.7thx1sz8',
+                'type': 'fill',
+                'source': {
+                    'type': 'vector',
+                    'url': 'mapbox://oligas.7thx1sz8'
+                },
+                'paint': {
+                    'fill-color': '#721f1e', },
+                'source-layer': 'National_Forest_Inventory_Eng-5ujcan',
+            });
+
+        /*England and Wales Urban Forest Inventory 2019*/
+            map.addLayer({
+                'id': 'oligas.4def7rmi',
+                'type': 'fill',
+                'source': {
+                    'type': 'vector',
+                    'url': 'mapbox://oligas.4def7rmi'
+                },
+                'paint': {
+                    'fill-color': '#77b284', },
+                'source-layer': 'National_Forest_Inventory_Eng-c6d3i3',
+            });
+
+        /*England and Wales Urban Forest Inventory 2020*/
+            map.addLayer({
+                'id': 'oligas.2ja73j88',
+                'type': 'fill',
+                'source': {
+                    'type': 'vector',
+                    'url': 'mapbox://oligas.2ja73j88'
+                },
+                'paint': {
+                    'fill-color': '#d622da', },
+                'source-layer': 'National_Forest_Inventory_Eng-4w9yk2',
+            });
+
+            /*England and Wales Urban Forest Inventory 2021*/
+            map.addLayer({
+                'id': 'oligas.2lc5vryh',
+                'type': 'fill',
+                'source': {
+                    'type': 'vector',
+                    'url': 'mapbox://oligas.2lc5vryh'
+                },
+                'paint': { 'fill-color': '#00ff00' },
+                'source-layer': 'National_Forest_Inventory_Eng-5ggv75',
+            });
+
+            /*Scotland Major Cities & Town Boundaries*/
+            map.addLayer({
+                'id': 'oligas.d7cgzjic',
+                'type': 'line',
+                'source': {
+                    'type': 'vector',
+                    'url': 'mapbox://oligas.d7cgzjic'
+                },
+                'paint': {
+                    'line-color': '#000000',
+                    'line-width': 2
+                },
+                'source-layer': 'Scotland_Major_Cities_and_Tow-9cl6qd',
+
+            });
+
+            /*England & Wales Major City Boundaries*/
+            map.addLayer({
+                'id': 'oligas.31g6bs8m',
+                'type': 'line',
+                'source': {
+                    'type': 'vector',
+                    'url': 'mapbox://oligas.31g6bs8m'
+                },
+                'paint': {
+                    'line-color': '#000000',
+                    'line-width': 2
+                },
+                'source-layer': 'England_and_Wales_Major_Citie-1yrv4x',
+            });
+            
+            /*Layer Symbology*/
+            var layers = [
+                ['UK Urban Forest Inventory 2021', '#00ff00'],
+                ['UK Urban Forest Inventory 2020', '#d622da'],
+                ['UK Urban Forest Inventory 2019', '#77b284'],
+                ['UK Urban Forest Inventory 2018', '#721f1e'],
+                ['UK Urban Forest Inventory 2017', '#72f4ea'],
+                ['UK Urban Forest Inventory 2016', '#7c5c1a'],
+                ['UK Urban Forest Inventory 2015', '#feff00'],
+                ['UK Urban Forest Inventory 2014', '#5eb2ef'],
+                ['UK Urban Forest Inventory 2013', '#e034ef'],
+                ['UK Urban Forest Inventory 2012', '#0113bc'],
+                ['UK Urban Forest Inventory 2011', '#ff0000'],
+                ['Scotland Major Cities and Town Boundaries', '#000000'],
+                ['England & Wales Major City Boundaries', '#000000']
+            ];
+
+            var legend = document.getElementById('legend');
+
+            /*Create Legend*/
+            function createLegendItem(text, color) {
+                var item = document.createElement('div');
+                var key = document.createElement('span');
+                key.className = 'legend-key';
+                key.style.backgroundColor = color;
+                var value = document.createTextNode(text);
+                item.appendChild(key);
+                item.appendChild(value);
+                legend.appendChild(item);
+            }
+            layers.forEach(function (layer) {
+                createLegendItem(layer[0], layer[1]);
+            });
+
+            /*Set Scale Bar Control*/
+            addLayerControls();
+        });
+        var scale = new mapboxgl.ScaleControl({
+            maxWidth: 500,
+            unit: 'metric'
+        });
+        map.addControl(scale, 'bottom-left');
+
+        /*Set Print Button Functions*/
+        document.getElementById('print-btn').addEventListener('click', function () {
+            map.once('render', function () {
+                var canvas = map.getCanvas();
+                var dataURL = canvas.toDataURL('image/png');
+                var link = document.createElement('a');
+                link.download = 'map.png';
+                link.href = dataURL;
+                link.click();
+                link.remove();
+            });
+
+            /*Refresh Map Page*/
+            map.triggerRepaint();
+        });
+
+        /*Set Search Button Functions*/
+        document.getElementById('search-btn').addEventListener('click', function () {
+            var searchText = document.getElementById('search-box').value;
+            if (!searchText) {
+                alert('Please enter a search term');
+                return;
+            }
+
+            /*Add Mapbox Geocoding API*/
+            var geocodingUrl = 'https://api.mapbox.com/geocoding/v5/mapbox.places/' 
+            + encodeURIComponent(searchText) 
+            + '.json?access_token=' + mapboxgl.accessToken;
+            fetch(geocodingUrl)
+                .then(function (response) {
+                    return response.json();
+                })
+                .then(function (data) {
+                    if (data.features && data.features.length > 0) {
+                        var firstResult = data.features[0];
+                        var coordinates = firstResult.geometry.coordinates;
+
+                        /*Auto Zoom to Search Location Function*/
+                        map.flyTo({ center: coordinates, zoom: 9.5 });
+                    } else {
+                        alert('No results found');
+                    }
+                })
+                .catch(function (error) {
+                    console.error('Error:', error);
+                });
+        
+});
+
+    </script>
+
+</body>
+
+</html>
